@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Murder Mystery Game</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #c62828;
+            text-align: center;
+            border-bottom: 2px solid #c62828;
+            padding-bottom: 10px;
+        }
+        .game-container {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+        .scene {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #3d3d3d;
+            border-left: 4px solid #c62828;
+        }
+        .clue {
+            background-color: #424242;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .clue:hover {
+            background-color: #5d5d5d;
+        }
+        .clue.revealed {
+            background-color: #2e7d32;
+        }
+        .suspects {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .suspect {
+            background-color: #3d3d3d;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .suspect:hover {
+            transform: scale(1.03);
+        }
+        .suspect.selected {
+            border: 2px solid #c62828;
+            box-shadow: 0 0 10px rgba(198, 40, 40, 0.5);
+        }
+        .suspect img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .accuse-btn {
+            background-color: #c62828;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            transition: background-color 0.3s;
+        }
+        .accuse-btn:hover {
+            background-color: #8e0000;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+        }
+        .close-btn {
+            background-color: #c62828;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-top: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .progress {
+            margin: 20px 0;
+            background-color: #424242;
+            height: 10px;
+            border-radius: 5px;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #c62828;
+            border-radius: 5px;
+            transition: width 0.5s;
+        }
+        .notes {
+            background-color: #3d3d3d;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            background-color: #424242;
+            color: #e0e0e0;
+            border: 1px solid #5d5d5d;
+            padding: 8px;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .restart-btn {
+            background-color: #424242;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-top: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Murder at the Grand Estate</h1>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="scene">
+            <h2>The Crime Scene</h2>
+            <p>It's a cold November evening when you receive the call. Wealthy industrialist Reginald Blackwood has been found dead in his study at the Blackwood Estate. The police are baffled and have called you in as a consulting detective. You have until dawn to solve the case.</p>
+            <p>The victim was found slumped over his desk, a look of surprise frozen on his face. There are no obvious signs of violence, but the coroner confirms it was murder by poisoning.</p>
+        </div>
+        
+        <div class="scene">
+            <h2>Investigate the Clues</h2>
+            <p>Click on clues to reveal them and gather evidence:</p>
+            <div class="clue" onclick="revealClue(this, 'clue1')">Examine the victim's desk</div>
+            <div class="clue" onclick="revealClue(this, 'clue2')">Check the victim's personal effects</div>
+            <div class="clue" onclick="revealClue(this, 'clue3')">Interview the butler</div>
+            <div class="clue" onclick="revealClue(this, 'clue4')">Examine the tea set</div>
+            <div class="clue" onclick="revealClue(this, 'clue5')">Check the victim's appointment book</div>
+            <div class="clue" onclick="revealClue(this, 'clue6')">Review security footage</div>
+        </div>
+        
+        <div class="scene">
+            <h2>The Suspects</h2>
+            <p>Six people were in the house at the time of the murder. One of them is the killer.</p>
+            <div class="suspects" id="suspectsContainer">
+                <!-- Suspects will be generated by JavaScript -->
+            </div>
+        </div>
+        
+        <button class="accuse-btn" onclick="accuse()">Make Your Accusation</button>
+        
+        <div class="notes">
+            <h2>Your Notes</h2>
+            <textarea id="detectiveNotes" placeholder="Record your thoughts and observations here..."></textarea>
+        </div>
+    </div>
+    
+    <div class="modal" id="clueModal">
+        <div class="modal-content">
+            <h2 id="clueTitle">Clue Revealed</h2>
+            <p id="clueContent"></p>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="resultTitle">Result</h2>
+            <p id="resultContent"></p>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        const gameState = {
+            cluesFound: 0,
+            totalClues: 6,
+            selectedSuspect: null,
+            killer: null,
+            revealedClues: {
+                clue1: false,
+                clue2: false,
+                clue3: false,
+                clue4: false,
+                clue5: false,
+                clue6: false
+            }
+        };
+        
+        // Suspect information
+        const suspects = [
+            {
+                id: "eleanor",
+                name: "Eleanor Blackwood",
+                description: "The victim's wife. Their marriage was reportedly strained after rumors of his infidelity.",
+                image: "https://source.unsplash.com/random/200x200/?woman,portrait,40,wealthy",
+                motive: "Stood to inherit the entire Blackwood fortune. Recently increased her life insurance policy on the victim.",
+                opportunity: "Was seen arguing with the victim shortly before his death.",
+                alibi: "Claims to have been in her room reading, but no one can verify."
+            },
+            {
+                id: "victor",
+                name: "Victor Blackwood",
+                description: "The victim's younger brother and business partner.",
+                image: "https://source.unsplash.com/random/200x200/?man,portrait,40,business",
+                motive: "Would take control of the family business if his brother died. Was recently caught embezzling company funds.",
+                opportunity: "Was the last person to see the victim alive.",
+                alibi: "Claims he went straight to his office after the meeting, but security footage shows him lingering."
+            },
+            {
+                id: "margaret",
+                name: "Margaret Hargrove",
+                description: "The family's longtime housekeeper.",
+                image: "https://source.unsplash.com/random/200x200/?woman,portrait,50,housekeeper",
+                motive: "Her son was fired from the family business and later committed suicide. She blamed the victim.",
+                opportunity: "Had access to all areas of the house, including the study.",
+                alibi: "Was supposedly cleaning the dining room, but no one saw her there."
+            },
+            {
+                id: "james",
+                name: "James Whitmore",
+                description: "The family butler, who discovered the body.",
+                image: "https://source.unsplash.com/random/200x200/?man,portrait,60,butler",
+                motive: "Was secretly in love with Eleanor Blackwood and jealous of the victim.",
+                opportunity: "Had access to the study and served all drinks.",
+                alibi: "Claims to have been polishing silverware when the murder occurred."
+            },
+            {
+                id: "clara",
+                name: "Clara Winslow",
+                description: "The victim's personal secretary.",
+                image: "https://source.unsplash.com/random/200x200/?woman,portrait,25,secretary",
+                motive: "Was having an affair with the victim and recently found out she was pregnant.",
+                opportunity: "Had unrestricted access to the study and the victim's schedule.",
+                alibi: "Says she was working in her office, but security logs show she entered the study."
+            },
+            {
+                id: "arthur",
+                name: "Arthur Caldwell",
+                description: "The victim's business rival and dinner guest.",
+                image: "https://source.unsplash.com/random/200x200/?man,portrait,55,business",
+                motive: "Stood to gain a lucrative contract if the victim was out of the way.",
+                opportunity: "Was in the house for dinner and had access to the study.",
+                alibi: "Claims he left immediately after dinner, but his car was seen in the driveway later."
+            }
+        ];
+        
+        // Clue information - now includes which suspect they point to
+        const clues = {
+            clue1: {
+                content: "On the desk, you find a half-empty glass of whiskey and a crumpled note that reads: 'This is your last warning. Sign the papers or face the consequences.' The handwriting matches Victor Blackwood's.",
+                pointsTo: ["victor"]
+            },
+            clue2: {
+                content: "In the victim's pocket, you find a receipt from a private investigator dated yesterday. The report indicates Victor has been embezzling company funds and was about to be exposed.",
+                pointsTo: ["victor"]
+            },
+            clue3: {
+                content: "The butler reports hearing a heated argument between the victim and Eleanor about an hour before the body was discovered. Eleanor stormed out in tears.",
+                pointsTo: ["eleanor"]
+            },
+            clue4: {
+                content: "The tea set shows traces of a bitter almond-smelling substance - likely cyanide. Only Margaret and James had access to the study's tea service today.",
+                pointsTo: ["margaret", "james"]
+            },
+            clue5: {
+                content: "The appointment book shows Arthur Caldwell was the last scheduled meeting before the victim's death. Their meeting ran much longer than planned.",
+                pointsTo: ["arthur"]
+            },
+            clue6: {
+                content: "Security footage shows Clara entering the study twice - once before dinner and again just before the estimated time of death. She appears nervous in the footage.",
+                pointsTo: ["clara"]
+            }
+        };
+        
+        // Initialize the game
+        function initGame() {
+            // Randomly select the killer
+            gameState.killer = suspects[Math.floor(Math.random() * suspects.length)].id;
+            
+            // Generate suspect HTML
+            const suspectsContainer = document.getElementById('suspectsContainer');
+            suspectsContainer.innerHTML = '';
+            
+            suspects.forEach(suspect => {
+                const suspectElement = document.createElement('div');
+                suspectElement.className = 'suspect';
+                suspectElement.dataset.id = suspect.id;
+                suspectElement.innerHTML = `
+                    <img src="${suspect.image}" alt="${suspect.name}">
+                    <h3>${suspect.name}</h3>
+                    <p>${suspect.description}</p>
+                `;
+                suspectElement.onclick = () => selectSuspect(suspectElement, suspect.id);
+                suspectsContainer.appendChild(suspectElement);
+            });
+            
+            // Reset game state
+            gameState.cluesFound = 0;
+            gameState.selectedSuspect = null;
+            gameState.revealedClues = {
+                clue1: false,
+                clue2: false,
+                clue3: false,
+                clue4: false,
+                clue5: false,
+                clue6: false
+            };
+            
+            // Reset progress bar
+            updateProgress();
+            
+            // Clear notes
+            document.getElementById('detectiveNotes').value = '';
+        }
+        
+        // Reveal a clue
+        function revealClue(element, clueId) {
+            if (!gameState.revealedClues[clueId]) {
+                element.classList.add('revealed');
+                gameState.revealedClues[clueId] = true;
+                gameState.cluesFound++;
+                updateProgress();
+                
+                // Show clue in modal
+                document.getElementById('clueTitle').textContent = 'Clue Discovered';
+                document.getElementById('clueContent').textContent = clues[clueId].content;
+                document.getElementById('clueModal').style.display = 'flex';
+                
+                // Highlight suspects this clue points to
+                clues[clueId].pointsTo.forEach(suspectId => {
+                    const suspectElement = document.querySelector(`.suspect[data-id="${suspectId}"]`);
+                    if (suspectElement) {
+                        suspectElement.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.7)';
+                    }
+                });
+            }
+        }
+        
+        // Select a suspect
+        function selectSuspect(element, suspectId) {
+            // Remove selection from all suspects
+            document.querySelectorAll('.suspect').forEach(suspect => {
+                suspect.classList.remove('selected');
+            });
+            
+            // Highlight selected suspect
+            element.classList.add('selected');
+            gameState.selectedSuspect = suspectId;
+        }
+        
+        // Make an accusation
+        function accuse() {
+            if (!gameState.selectedSuspect) {
+                alert("Please select a suspect before making an accusation!");
+                return;
+            }
+            
+            if (gameState.cluesFound < 3) {
+                alert("You haven't gathered enough evidence yet! Find at least 3 clues before accusing someone.");
+                return;
+            }
+            
+            const modal = document.getElementById('resultModal');
+            const title = document.getElementById('resultTitle');
+            const content = document.getElementById('resultContent');
+            
+            const killerInfo = suspects.find(s => s.id === gameState.killer);
+            const accusedInfo = suspects.find(s => s.id === gameState.selectedSuspect);
+            
+            if (gameState.selectedSuspect === gameState.killer) {
+                title.textContent = "Case Solved!";
+                content.innerHTML = `
+                    <p>Congratulations! You've correctly identified ${killerInfo.name} as the killer.</p>
+                    <p><strong>Motive:</strong> ${killerInfo.motive}</p>
+                    <p><strong>Opportunity:</strong> ${killerInfo.opportunity}</p>
+                    <p>The evidence clearly shows they poisoned Reginald Blackwood. Justice has been served!</p>
+                `;
+            } else {
+                title.textContent = "Wrong Accusation";
+                content.innerHTML = `
+                    <p>Unfortunately, ${accusedInfo.name} is innocent.</p>
+                    <p>The real killer was ${killerInfo.name}.</p>
+                    <p><strong>Motive:</strong> ${killerInfo.motive}</p>
+                    <p><strong>Opportunity:</strong> ${killerInfo.opportunity}</p>
+                    <p>Review the evidence and try again.</p>
+                `;
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('clueModal').style.display = 'none';
+            document.getElementById('resultModal').style.display = 'none';
+        }
+        
+        // Restart game
+        function restartGame() {
+            closeModal();
+            initGame();
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            const progress = (gameState.cluesFound / gameState.totalClues) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+        
+        // Initialize the game when page loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>
